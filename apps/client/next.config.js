@@ -1,7 +1,7 @@
 // next.config.js
 const withPlugins = require('next-compose-plugins');
 const removeImports = require('next-remove-imports')();
-const nextTranslate = require('next-translate');
+const nextTranslate = require('next-translate-plugin');
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -13,8 +13,8 @@ module.exports = withPlugins(
   [removeImports, nextTranslate, withPWA],
   {
     reactStrictMode: false,
-    swcMinify: true,
     output: 'standalone',
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
 
     async rewrites() {
       return [

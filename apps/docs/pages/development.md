@@ -7,7 +7,7 @@ Welcome to the project! This guide will help you set up the project on your loca
 Before you begin, ensure you have met the following requirements:
 
 - **Operating System**: Windows, macOS, or Linux
-- **Node.js**: Version 14.x or higher
+- **Node.js**: Version 24.6.0 or higher
 - **npm**: Version 6.x or higher
 - **Git**: Version control system
 - **Database**: (e.g., PostgreSQL, MySQL) - Ensure it's installed and running

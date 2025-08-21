@@ -19,6 +19,8 @@ build
 # misc
 .DS_Store
 *.pem
+__MACOSX/
+*.zip
 
 # debug
 npm-debug.log*
@@ -44,3 +46,5 @@ dist
 infra
 
 .cursorrules
+
+exchange-integration/

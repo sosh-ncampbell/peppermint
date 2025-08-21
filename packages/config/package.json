@@ -3,16 +3,19 @@
     "version": "1.0.0",
     "main": "index.js",
     "license": "MIT",
+    "engines": {
+        "node": ">=24.6.0"
+    },
     "files": [
         "eslint-preset.js"
     ],
     "dependencies": {
-        "eslint-config-next": "latest",
-        "eslint-config-prettier": "^8.3.0",
-        "eslint-config-turbo": "latest",
-        "eslint-plugin-react": "7.28.0"
+        "eslint-config-next": "^15.0.3",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-config-turbo": "^2.3.2",
+        "eslint-plugin-react": "^7.37.2"
     },
     "devDependencies": {
-        "typescript": "^4.5.3"
+        "typescript": "^5.6.3"
     }
 }

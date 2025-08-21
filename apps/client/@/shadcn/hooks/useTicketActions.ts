@@ -74,8 +74,8 @@ export function useTicketActions(token: string, refetch: () => void) {
         },
         body: JSON.stringify({
           id: ticket.id,
-          detail: ticket.detail,
-          note: ticket.note,
+          detail: (ticket as any).detail,
+          note: (ticket as any).note,
           title: ticket.title,
           priority: priority,
           status: ticket.status,

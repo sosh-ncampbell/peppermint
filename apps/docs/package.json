@@ -2,6 +2,9 @@
   "name": "docs",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": ">=24.6.0"
+  },
   "scripts": {
     "dev": "next",
     "build": "next build",
@@ -12,15 +15,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "next": "^14.2.15",
-    "nextra": "^3.0.15",
-    "nextra-theme-docs": "^3.0.15",
+    "next": "^15.0.3",
+    "nextra": "^3.2.0",
+    "nextra-theme-docs": "^3.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-spinners": "^0.13.8"
+    "react-spinners": "^0.14.1"
   },
   "devDependencies": {
-    "@types/react": "18.2.38",
-    "@types/react-dom": "^18"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
   }
 }

@@ -1,4 +1,4 @@
-FROM node:lts AS builder
+FROM node:24.6.0 AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN cd apps/client && yarn install --production --ignore-scripts --prefer-offlin
 RUN cd apps/client && yarn add --dev typescript @types/node --network-timeout 1000000
 RUN cd apps/client && yarn build
 
-FROM node:lts AS runner
+FROM node:24.6.0 AS runner
 
 COPY --from=builder /app/apps/api/ ./apps/api/
 COPY --from=builder /app/apps/client/.next/standalone ./apps/client
