@@ -135,9 +135,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-ses@npm:^3.731.1":
+"@aws-sdk/client-sesv2@npm:^3.839.0":
   version: 3.873.0
-  resolution: "@aws-sdk/client-ses@npm:3.873.0"
+  resolution: "@aws-sdk/client-sesv2@npm:3.873.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -148,6 +148,7 @@ __metadata:
     "@aws-sdk/middleware-recursion-detection": "npm:3.873.0"
     "@aws-sdk/middleware-user-agent": "npm:3.873.0"
     "@aws-sdk/region-config-resolver": "npm:3.873.0"
+    "@aws-sdk/signature-v4-multi-region": "npm:3.873.0"
     "@aws-sdk/types": "npm:3.862.0"
     "@aws-sdk/util-endpoints": "npm:3.873.0"
     "@aws-sdk/util-user-agent-browser": "npm:3.873.0"
@@ -177,9 +178,8 @@ __metadata:
     "@smithy/util-middleware": "npm:^4.0.5"
     "@smithy/util-retry": "npm:^4.0.7"
     "@smithy/util-utf8": "npm:^4.0.0"
-    "@smithy/util-waiter": "npm:^4.0.7"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/27e547fc8712364d3b50f4a63578b4c73abc00ac566d3a9929faa3339ee6233d5502c4a10596a600a185ef36982479e8f19adf11ca19ff31a1dfe0f2d4d63cb3
+  checksum: 10c0/c81469c2638e1998b9e32275bf34ead69f89a3c25b7a0820379e1de8a5afb74cbe903863833fb1c2fdd2c17c697b7e2757769b7de6fc8dd511771de0d952b634
   languageName: node
   linkType: hard
 
@@ -403,6 +403,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/middleware-sdk-s3@npm:3.873.0":
+  version: 3.873.0
+  resolution: "@aws-sdk/middleware-sdk-s3@npm:3.873.0"
+  dependencies:
+    "@aws-sdk/core": "npm:3.873.0"
+    "@aws-sdk/types": "npm:3.862.0"
+    "@aws-sdk/util-arn-parser": "npm:3.873.0"
+    "@smithy/core": "npm:^3.8.0"
+    "@smithy/node-config-provider": "npm:^4.1.4"
+    "@smithy/protocol-http": "npm:^5.1.3"
+    "@smithy/signature-v4": "npm:^5.1.3"
+    "@smithy/smithy-client": "npm:^4.4.10"
+    "@smithy/types": "npm:^4.3.2"
+    "@smithy/util-config-provider": "npm:^4.0.0"
+    "@smithy/util-middleware": "npm:^4.0.5"
+    "@smithy/util-stream": "npm:^4.2.4"
+    "@smithy/util-utf8": "npm:^4.0.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/8bac428749123994b04e51ba2893a04e53022933a21fed4abbcef8f013014f7f1673fecb490285a123c484fa3e7c4d1e64fb8c679e6d1f259a1ecc03e0e553ef
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/middleware-user-agent@npm:3.873.0":
   version: 3.873.0
   resolution: "@aws-sdk/middleware-user-agent@npm:3.873.0"
@@ -478,6 +500,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/signature-v4-multi-region@npm:3.873.0":
+  version: 3.873.0
+  resolution: "@aws-sdk/signature-v4-multi-region@npm:3.873.0"
+  dependencies:
+    "@aws-sdk/middleware-sdk-s3": "npm:3.873.0"
+    "@aws-sdk/types": "npm:3.862.0"
+    "@smithy/protocol-http": "npm:^5.1.3"
+    "@smithy/signature-v4": "npm:^5.1.3"
+    "@smithy/types": "npm:^4.3.2"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/bf39a7902bec6f66f3881b0a426b57253959e808da46e6870e14897e357ac995c387b0bd00790bfea7725a1ed2940dea54b7174789b22a4d0faa63b79f963afd
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/token-providers@npm:3.873.0":
   version: 3.873.0
   resolution: "@aws-sdk/token-providers@npm:3.873.0"
@@ -500,6 +536,15 @@ __metadata:
     "@smithy/types": "npm:^4.3.2"
     tslib: "npm:^2.6.2"
   checksum: 10c0/d8e13eadde27c29e39d8effa861a3dc8ef43fba6ecb9772e3461619a76897873c8d4355be89aa5090294d1f17e1a6697834f0bbf6a7f73902a77fe00b1fbe5c2
+  languageName: node
+  linkType: hard
+
+"@aws-sdk/util-arn-parser@npm:3.873.0":
+  version: 3.873.0
+  resolution: "@aws-sdk/util-arn-parser@npm:3.873.0"
+  dependencies:
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/d99aa771464ca63d0cc737fad34ac40be2b1fecbfa0eeb3aea0b59be6a5e628c24be2847490e8786ed782b818b9248a7b0391d988f2914b3a415f551cb5d1b93
   languageName: node
   linkType: hard
 
@@ -5588,17 +5633,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/util-waiter@npm:^4.0.7":
-  version: 4.0.7
-  resolution: "@smithy/util-waiter@npm:4.0.7"
-  dependencies:
-    "@smithy/abort-controller": "npm:^4.0.5"
-    "@smithy/types": "npm:^4.3.2"
-    tslib: "npm:^2.6.2"
-  checksum: 10c0/14caffd913b9b18ff4f33d6bb1f05eef2e354104a6db2b69654d7db4582c4be46b202d46af87a66177a8a3a99082fa8b0948195de8aeb63998c6ed5b04f2bd3d
-  languageName: node
-  linkType: hard
-
 "@surma/rollup-plugin-off-main-thread@npm:^2.2.3":
   version: 2.2.3
   resolution: "@surma/rollup-plugin-off-main-thread@npm:2.2.3"
@@ -6036,12 +6070,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/bcrypt@npm:^5.0.2":
-  version: 5.0.2
-  resolution: "@types/bcrypt@npm:5.0.2"
+"@types/bcrypt@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@types/bcrypt@npm:6.0.0"
   dependencies:
     "@types/node": "npm:*"
-  checksum: 10c0/dd7f05e183b9b1fc08ec499069febf197ab8e9c720766b5bbb5628395082e248f9a444c60882fe7788361fcadc302e21e055ab9c26a300f100e08791c353e6aa
+  checksum: 10c0/48b66408838f5eb59791da5a77260cef59a5291ce0945f2caa3b5a6158c44b321b684b4aa7dce771852c63271c766cadd587374273451b300377a17015c1d51d
   languageName: node
   linkType: hard
 
@@ -6359,7 +6393,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/email-reply-parser@npm:^1.2.4":
+"@types/email-reply-parser@npm:^1.4.2":
   version: 1.4.2
   resolution: "@types/email-reply-parser@npm:1.4.2"
   checksum: 10c0/8ca4c3d76e168fab6c1306280930363a54f4576cf209a6045049d44fa36dc45e06e3f922128781c09d35b119ca6b77c3427d3ff3a94f6a123781aaecc37677b3
@@ -6509,7 +6543,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsonwebtoken@npm:^9.0.7":
+"@types/jsonwebtoken@npm:^9.0.10":
   version: 9.0.10
   resolution: "@types/jsonwebtoken@npm:9.0.10"
   dependencies:
@@ -6549,7 +6583,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mailparser@npm:^3.4.5":
+"@types/mailparser@npm:^3.4.6":
   version: 3.4.6
   resolution: "@types/mailparser@npm:3.4.6"
   dependencies:
@@ -6678,13 +6712,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/nodemailer@npm:^6.4.19":
-  version: 6.4.19
-  resolution: "@types/nodemailer@npm:6.4.19"
+"@types/nodemailer@npm:^7.0.1":
+  version: 7.0.1
+  resolution: "@types/nodemailer@npm:7.0.1"
   dependencies:
-    "@aws-sdk/client-ses": "npm:^3.731.1"
+    "@aws-sdk/client-sesv2": "npm:^3.839.0"
     "@types/node": "npm:*"
-  checksum: 10c0/e4d42f6e2a87523de3f6dfe6a856647dbd6d2305c2c787bdefaeb74a89c08598b7c04e23ba8d64c7972afa3823e51a1d37671bc0361bdb844f1f2906dc6e66db
+  checksum: 10c0/7e420b0f1a1119b8633f0d6777d17a66000291baaaa92ee3e7777f616089d401e4052af9c871d25e1e6bc84f2a72468ccb116c62ac5e4f3da07814bf862b5470
   languageName: node
   linkType: hard
 
@@ -7568,18 +7602,18 @@ __metadata:
     "@fastify/swagger": "npm:^9.2.0"
     "@fastify/swagger-ui": "npm:^5.1.0"
     "@prisma/client": "npm:5.22.0"
-    "@types/bcrypt": "npm:^5.0.2"
-    "@types/email-reply-parser": "npm:^1.2.4"
+    "@types/bcrypt": "npm:^6.0.0"
+    "@types/email-reply-parser": "npm:^1.4.2"
     "@types/formidable": "npm:^3.4.5"
     "@types/imap": "npm:^0.8.42"
-    "@types/jsonwebtoken": "npm:^9.0.7"
-    "@types/mailparser": "npm:^3.4.5"
+    "@types/jsonwebtoken": "npm:^9.0.10"
+    "@types/mailparser": "npm:^3.4.6"
     "@types/node": "npm:^22.9.0"
-    "@types/nodemailer": "npm:^6.4.19"
+    "@types/nodemailer": "npm:^7.0.1"
     "@types/passport-local": "npm:^1.0.38"
     "@types/simple-oauth2": "npm:^5.0.7"
     add: "npm:^2.0.6"
-    axios: "npm:^1.7.7"
+    axios: "npm:^1.11.0"
     bcrypt: "npm:^5.1.1"
     dotenv: "npm:^16.4.5"
     email-reply-parser: "npm:^1.8.1"
@@ -8035,7 +8069,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.2, axios@npm:^1.7.7":
+"axios@npm:^1.11.0, axios@npm:^1.6.2, axios@npm:^1.7.7":
   version: 1.11.0
   resolution: "axios@npm:1.11.0"
   dependencies:

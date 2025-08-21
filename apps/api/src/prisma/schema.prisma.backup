@@ -547,3 +547,103 @@ model TicketEmailMapping {
   @@map("ticket_email_mappings")
 }
 
+// Microsoft 365 Exchange Integration Models
+model ExchangeConnection {
+  id          String   @id @default(cuid())
+  userId      String
+  tenantId    String
+  clientId    String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens      ExchangeToken[]
+  oauthSessions ExchangeOAuthSession[]
+  emailLogs   EmailProcessingLog[]
+  emailMappings TicketEmailMapping[]
+  
+  @@unique([userId, tenantId, clientId])
+  @@map("exchange_connections")
+}
+
+model ExchangeToken {
+  id                String    @id @default(cuid())
+  connectionId      String    @unique
+  accessToken       String
+  refreshToken      String?
+  tokenType         String    @default("Bearer")
+  expiresAt         DateTime
+  scope             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  connection        ExchangeConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  
+  @@map("exchange_tokens")
+}
+
+model ExchangeOAuthSession {
+  id            String   @id @default(cuid())
+  connectionId  String?
+  state         String   @unique
+  codeVerifier  String
+  userId        String
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection    ExchangeConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  
+  @@index([connectionId])
+  @@index([expiresAt])
+  @@map("exchange_oauth_sessions")
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+model EmailProcessingLog {
+  id              String           @id @default(cuid())
+  connectionId    String
+  messageId       String
+  subject         String?
+  sender          String?
+  status          ProcessingStatus @default(PENDING)
+  ticketId        String?
+  errorMessage    String?
+  processedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  
+  connection      ExchangeConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  ticket          Ticket?            @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  
+  @@unique([connectionId, messageId])
+  @@index([connectionId])
+  @@index([ticketId])
+  @@index([processedAt])
+  @@index([status])
+  @@map("email_processing_logs")
+}
+
+model TicketEmailMapping {
+  id            String   @id @default(cuid())
+  ticketId      String
+  messageId     String
+  threadId      String?
+  connectionId  String
+  createdAt     DateTime @default(now())
+  
+  ticket        Ticket             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  connection    ExchangeConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  
+  @@unique([ticketId, messageId])
+  @@index([connectionId])
+  @@index([threadId])
+  @@map("ticket_email_mappings")
+}

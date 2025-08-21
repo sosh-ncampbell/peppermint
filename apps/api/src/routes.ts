@@ -26,3 +26,7 @@ export function registerRoutes(fastify: FastifyInstance) {
   objectStoreRoutes(fastify);
   roleRoutes(fastify);
 }
+
+// Exchange Integration Routes
+import exchangeRoutes, { exchangeRoutesMetadata } from './routes/exchange';
+app.register(exchangeRoutes, { prefix: `/api/v1${exchangeRoutesMetadata.prefix}` });
