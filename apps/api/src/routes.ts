@@ -11,6 +11,7 @@ import { ticketRoutes } from "./controllers/ticket";
 import { timeTrackingRoutes } from "./controllers/time";
 import { userRoutes } from "./controllers/users";
 import { webhookRoutes } from "./controllers/webhooks";
+import { emailProviderRoutes } from "./controllers/emailProvider";
 
 export function registerRoutes(fastify: FastifyInstance) {
   authRoutes(fastify);
@@ -25,8 +26,5 @@ export function registerRoutes(fastify: FastifyInstance) {
   timeTrackingRoutes(fastify);
   objectStoreRoutes(fastify);
   roleRoutes(fastify);
+  emailProviderRoutes(fastify);
 }
-
-// Exchange Integration Routes
-import exchangeRoutes, { exchangeRoutesMetadata } from './routes/exchange';
-app.register(exchangeRoutes, { prefix: `/api/v1${exchangeRoutesMetadata.prefix}` });

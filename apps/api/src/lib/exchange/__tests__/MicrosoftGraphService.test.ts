@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { MicrosoftGraphService } from '../MicrosoftGraphService';
-import type { 
+import { 
   ExchangeConnectionData, 
   ExchangeTokenData,
   GraphEmailMessage 
-} from '../../../types/exchange';
+} from '../../../types/exchange/index';
 
 // Mock environment variable
 process.env.MICROSOFT_CLIENT_SECRET = 'test-client-secret';

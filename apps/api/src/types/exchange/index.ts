@@ -176,6 +176,8 @@ export interface IMicrosoftGraphService {
   refreshAccessToken(connectionId: string): Promise<boolean>;
   getEmails(connectionId: string, limit?: number): Promise<GraphEmailMessage[]>;
   testConnection(connectionId: string): Promise<boolean>;
+  sendEmail(connectionId: string, to: string, subject: string, body: string, replyToMessageId?: string): Promise<boolean>;
+  getUserProfile(connectionId: string): Promise<any>;
 }
 
 export interface IOAuthService {
@@ -187,5 +189,6 @@ export interface IOAuthService {
 export interface IEmailProcessingService {
   processEmails(connectionId: string, limit?: number): Promise<{ processed: number; errors: number }>;
   createTicketFromEmail(message: GraphEmailMessage, connectionId: string): Promise<string>;
-  linkEmailToTicket(messageId: string, ticketId: string): Promise<void>;
+  linkEmailToTicket(messageId: string, ticketId: string, threadId?: string, connectionId?: string): Promise<void>;
+  getProcessingStats(connectionId: string): Promise<{ total: number; success: number; failed: number; }>;
 }

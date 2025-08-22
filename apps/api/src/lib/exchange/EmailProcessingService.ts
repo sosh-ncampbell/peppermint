@@ -5,14 +5,17 @@ import type {
 } from '../../types/exchange';
 import { MicrosoftGraphService } from './MicrosoftGraphService';
 import { extractPlainText, sanitizeEmailContent } from './crypto';
+import { EmailService } from '../email/EmailService';
 
 export class EmailProcessingService implements IEmailProcessingService {
   private prisma: PrismaClient;
   private graphService: MicrosoftGraphService;
+  private emailService: EmailService;
   
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.graphService = new MicrosoftGraphService(prisma);
+    this.emailService = new EmailService(prisma);
   }
 
   /**
@@ -220,7 +223,7 @@ export class EmailProcessingService implements IEmailProcessingService {
   }
 
   /**
-   * Link an email to a ticket
+   * Link an email to a ticket for conversation threading
    */
   async linkEmailToTicket(messageId: string, ticketId: string, threadId?: string, connectionId?: string): Promise<void> {
     try {
@@ -228,16 +231,15 @@ export class EmailProcessingService implements IEmailProcessingService {
         data: {
           ticketId,
           messageId,
-          threadId,
-          connectionId: connectionId || '' // This should be required in practice
+          threadId: threadId || undefined,
+          connectionId: connectionId || 'unknown',
+          createdAt: new Date()
         }
       });
+
+      console.log(`Linked email ${messageId} to ticket ${ticketId}`);
     } catch (error) {
-      // Handle unique constraint violations gracefully
-      if (error instanceof Error && error.message.includes('Unique constraint')) {
-        console.log(`Email ${messageId} already linked to ticket ${ticketId}`);
-        return;
-      }
+      console.error('Error linking email to ticket:', error);
       throw error;
     }
   }
@@ -353,5 +355,232 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       }
     });
+  }
+
+  /**
+   * Send an email response from a ticket using Exchange
+   */
+  async sendTicketResponse(
+    ticketId: string,
+    recipientEmail: string,
+    subject: string,
+    message: string,
+    connectionId: string
+  ): Promise<boolean> {
+    try {
+      // Get ticket information and email threading data
+      const ticket = await this.prisma.ticket.findUnique({
+        where: { id: ticketId },
+        include: {
+          emailMappings: {
+            orderBy: { createdAt: 'asc' },
+            take: 1
+          }
+        }
+      });
+
+      if (!ticket) {
+        throw new Error(`Ticket ${ticketId} not found`);
+      }
+
+      // Get the original message ID for threading
+      const originalMessageId = ticket.emailMappings[0]?.messageId;
+
+      // Format the email subject to include ticket number
+      const formattedSubject = `[Ticket #${ticket.Number}] ${subject}`;
+
+      // Prepare RFC-compliant custom headers for ticket tracking
+      const customHeaders: Record<string, string> = {
+        'X-Peppermint-Ticket-ID': ticketId,
+        'X-Peppermint-Ticket-Number': ticket.Number.toString(),
+        'X-Peppermint-System': 'peppermint-helpdesk',
+        'X-Peppermint-Message-Type': 'reply',
+        'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
+      };
+
+      if (originalMessageId) {
+        customHeaders['X-Peppermint-Original-Message-ID'] = originalMessageId;
+      }
+
+      // Send the email through Exchange
+      const success = await this.graphService.sendEmail(
+        connectionId,
+        recipientEmail,
+        formattedSubject,
+        message,
+        originalMessageId,
+        customHeaders
+      );
+
+      if (success) {
+        // Log the outbound email for tracking
+        console.log(`Sent ticket response for ticket ${ticket.Number} to ${recipientEmail}`);
+      }
+
+      return success;
+    } catch (error) {
+      console.error('Error sending ticket response:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Initialize Exchange email provider for outbound emails
+   */
+  async initializeExchangeEmailProvider(connectionId: string): Promise<void> {
+    try {
+      // Initialize the email service with Exchange provider
+      await this.emailService.initializeProvider({
+        provider: 'exchange',
+        connectionId
+      });
+      
+      console.log(`Exchange email provider initialized for connection ${connectionId}`);
+    } catch (error) {
+      console.error('Failed to initialize Exchange email provider:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enhanced email processing with better threading support
+   */
+  async processEmailsWithThreading(connectionId: string, limit: number = 50): Promise<{ processed: number; errors: number; }> {
+    let processed = 0;
+    let errors = 0;
+
+    try {
+      // Verify connection exists and is active
+      const connection = await this.prisma.exchangeConnection.findUnique({
+        where: { id: connectionId },
+        include: { user: true }
+      });
+
+      if (!connection || !connection.isActive) {
+        throw new Error('Connection not found or inactive');
+      }
+
+      // Fetch emails from Microsoft Graph with enhanced metadata
+      const emails = await this.graphService.getEmails(connectionId, limit);
+      
+      console.log(`Processing ${emails.length} emails with threading for connection ${connectionId}`);
+
+      // Group emails by conversation ID for better threading
+      const conversationGroups = this.groupEmailsByConversation(emails);
+
+      for (const [conversationId, conversationEmails] of conversationGroups) {
+        try {
+          await this.processEmailConversation(conversationEmails, connectionId, conversationId);
+          processed += conversationEmails.length;
+        } catch (error) {
+          console.error(`Error processing conversation ${conversationId}:`, error);
+          errors += conversationEmails.length;
+        }
+      }
+
+      return { processed, errors };
+    } catch (error) {
+      console.error('Error in processEmailsWithThreading:', error);
+      return { processed, errors: errors + 1 };
+    }
+  }
+
+  /**
+   * Group emails by conversation ID for threading
+   */
+  private groupEmailsByConversation(emails: GraphEmailMessage[]): Map<string, GraphEmailMessage[]> {
+    const groups = new Map<string, GraphEmailMessage[]>();
+    
+    for (const email of emails) {
+      const conversationId = email.conversationId || email.id;
+      if (!groups.has(conversationId)) {
+        groups.set(conversationId, []);
+      }
+      groups.get(conversationId)!.push(email);
+    }
+    
+    return groups;
+  }
+
+  /**
+   * Process a conversation (thread) of emails
+   */
+  private async processEmailConversation(
+    emails: GraphEmailMessage[], 
+    connectionId: string,
+    conversationId: string
+  ): Promise<void> {
+    // Sort emails by received date
+    emails.sort((a, b) => new Date(a.receivedDateTime).getTime() - new Date(b.receivedDateTime).getTime());
+    
+    // Check if this conversation is already linked to a ticket
+    let ticketId: string | null = null;
+    const existingMapping = await this.prisma.ticketEmailMapping.findFirst({
+      where: { threadId: conversationId },
+      include: { ticket: true }
+    });
+
+    if (existingMapping) {
+      ticketId = existingMapping.ticketId;
+      console.log(`Found existing ticket ${ticketId} for conversation ${conversationId}`);
+    }
+
+    for (const email of emails) {
+      try {
+        // Check if this specific email has been processed
+        const existingLog = await this.prisma.emailProcessingLog.findUnique({
+          where: { 
+            connectionId_messageId: {
+              connectionId: connectionId,
+              messageId: email.id
+            }
+          }
+        });
+
+        if (existingLog) {
+          console.log(`Email ${email.id} already processed, skipping`);
+          continue;
+        }
+
+        if (!ticketId) {
+          // Create new ticket for the first email in conversation
+          ticketId = await this.createTicketFromEmail(email, connectionId);
+          console.log(`Created new ticket ${ticketId} for conversation ${conversationId}`);
+        } else {
+          // Add subsequent emails as comments to existing ticket
+          await this.addCommentToTicket(ticketId, email);
+          console.log(`Added comment to ticket ${ticketId} for email ${email.id}`);
+        }
+
+        // Link email to ticket with threading information
+        await this.linkEmailToTicket(email.id, ticketId, conversationId, connectionId);
+
+        // Log successful processing
+        await this.logEmailProcessing(
+          connectionId,
+          email.id,
+          email.subject,
+          email.from?.emailAddress?.address,
+          'SUCCESS',
+          ticketId
+        );
+
+      } catch (error) {
+        console.error(`Error processing email ${email.id} in conversation ${conversationId}:`, error);
+        
+        // Log failed processing
+        await this.logEmailProcessing(
+          connectionId,
+          email.id,
+          email.subject,
+          email.from?.emailAddress?.address,
+          'FAILED',
+          undefined,
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        
+        throw error;
+      }
+    }
   }
 }

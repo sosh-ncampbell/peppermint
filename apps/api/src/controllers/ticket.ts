@@ -5,10 +5,7 @@ import { checkToken } from "../lib/jwt";
 
 //@ts-ignore
 import { track } from "../lib/hog";
-import { sendAssignedEmail } from "../lib/nodemailer/ticket/assigned";
-import { sendComment } from "../lib/nodemailer/ticket/comment";
-import { sendTicketCreate } from "../lib/nodemailer/ticket/create";
-import { sendTicketStatus } from "../lib/nodemailer/ticket/status";
+import { TicketNotificationService } from "../lib/notifications/TicketNotificationService";
 import { assignedNotification } from "../lib/notifications/issue/assigned";
 import { commentNotification } from "../lib/notifications/issue/comment";
 import { priorityNotification } from "../lib/notifications/issue/priority";
@@ -30,6 +27,9 @@ const validateEmail = (email: string) => {
 };
 
 export function ticketRoutes(fastify: FastifyInstance) {
+  // Initialize notification service
+  const notificationService = new TicketNotificationService(prisma);
+
   fastify.post(
     "/api/v1/ticket/create",
     {
@@ -84,7 +84,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
       });
 
       if (!email && !validateEmail(email)) {
-        await sendTicketCreate(ticket);
+        await notificationService.sendCreationNotification(ticket.id, ticket.email);
       }
 
       if (engineer && engineer.name !== "Unassigned") {
@@ -94,7 +94,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await sendAssignedEmail(assgined!.email);
+        await notificationService.sendAssignmentNotification(ticket.id, assgined!.email);
 
         await assignedNotification(engineer, ticket, user);
       }
@@ -188,7 +188,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
       });
 
       if (!email && !validateEmail(email)) {
-        await sendTicketCreate(ticket);
+        await notificationService.sendCreationNotification(ticket.id, ticket.email);
       }
 
       if (engineer && engineer.name !== "Unassigned") {
@@ -198,7 +198,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await sendAssignedEmail(assgined!.email);
+        await notificationService.sendAssignmentNotification(ticket.id, assgined!.email);
 
         const user = await checkSession(request);
 
@@ -552,7 +552,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
           where: { id: id },
         });
 
-        await sendAssignedEmail(email);
+        await notificationService.sendAssignmentNotification(id, email);
         await assignedNotification(assigned, ticket, assigner);
       } else {
         await prisma.ticket.update({
@@ -674,7 +674,7 @@ export function ticketRoutes(fastify: FastifyInstance) {
       //@ts-expect-error
       const { email, title } = ticket;
       if (public_comment && email) {
-        sendComment(text, title, ticket!.id, email!);
+        await notificationService.sendCommentNotification(ticket!.id, text, email!, true);
       }
 
       await commentNotification(ticket, user);
@@ -732,7 +732,9 @@ export function ticketRoutes(fastify: FastifyInstance) {
 
       await activeStatusNotification(ticket, user, status);
 
-      await sendTicketStatus(ticket);
+      if (ticket.email) {
+        await notificationService.sendStatusChangeNotification(ticket.id, status, ticket.email);
+      }
 
       const webhook = await prisma.webhooks.findMany({
         where: {

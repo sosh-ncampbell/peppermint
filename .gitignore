@@ -48,3 +48,7 @@ infra
 .cursorrules
 
 exchange-integration/
+
+# VS Code local settings
+.vscode/settings.json
+.vscode/mcp.json

@@ -218,11 +218,18 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
   /**
    * Send an email via Microsoft Graph
    */
-  async sendEmail(connectionId: string, to: string, subject: string, body: string): Promise<boolean> {
+  async sendEmail(
+    connectionId: string, 
+    to: string, 
+    subject: string, 
+    body: string, 
+    replyToMessageId?: string,
+    customHeaders?: Record<string, string>
+  ): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken(connectionId);
       
-      const message = {
+      const message: any = {
         message: {
           subject,
           body: {
@@ -236,6 +243,35 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
           }]
         }
       };
+
+      // Prepare internet message headers
+      const headers: Array<{ name: string; value: string }> = [];
+
+      // Add reply-to headers if this is a reply
+      if (replyToMessageId) {
+        headers.push(
+          {
+            name: 'In-Reply-To',
+            value: replyToMessageId
+          },
+          {
+            name: 'References', 
+            value: replyToMessageId
+          }
+        );
+      }
+
+      // Add custom headers (RFC-compliant ticket tracking)
+      if (customHeaders) {
+        Object.entries(customHeaders).forEach(([name, value]) => {
+          headers.push({ name, value });
+        });
+      }
+
+      // Apply headers if we have any
+      if (headers.length > 0) {
+        message.message.internetMessageHeaders = headers;
+      }
 
       const response = await fetch(`${this.baseUrl}/me/sendMail`, {
         method: 'POST',
