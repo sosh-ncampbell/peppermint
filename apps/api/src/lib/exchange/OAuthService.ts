@@ -181,14 +181,14 @@ export class OAuthService implements IOAuthService {
         createdAt: updatedConnection.createdAt,
         updatedAt: updatedConnection.updatedAt,
         user: updatedConnection.user,
-        tokens: updatedConnection.tokens.map(token => ({
+        tokens: updatedConnection.tokens.map((token: any) => ({
           id: token.id,
           connectionId: token.connectionId,
           accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
+          refreshToken: token.refreshToken || undefined,
           tokenType: token.tokenType,
           expiresAt: token.expiresAt,
-          scope: token.scope,
+          scope: token.scope || undefined,
           createdAt: token.createdAt,
           updatedAt: token.updatedAt
         }))

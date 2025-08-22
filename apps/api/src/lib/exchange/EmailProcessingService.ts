@@ -25,7 +25,8 @@ export class EmailProcessingService implements IEmailProcessingService {
     try {
       // Verify connection exists and is active
       const connection = await this.prisma.exchangeConnection.findUnique({
-        where: { id: connectionId }
+        where: { id: connectionId },
+        include: { user: true }
       });
 
       if (!connection || !connection.isActive) {
@@ -73,7 +74,12 @@ export class EmailProcessingService implements IEmailProcessingService {
   private async processEmail(message: GraphEmailMessage, connectionId: string): Promise<void> {
     // Check if this email has already been processed
     const existingLog = await this.prisma.emailProcessingLog.findUnique({
-      where: { messageId: message.id }
+      where: { 
+        connectionId_messageId: {
+          connectionId: connectionId,
+          messageId: message.id
+        }
+      }
     });
 
     if (existingLog) {
@@ -114,7 +120,7 @@ export class EmailProcessingService implements IEmailProcessingService {
       }
 
       // Create email-ticket mapping
-      await this.linkEmailToTicket(message.id, ticketId, message.conversationId);
+      await this.linkEmailToTicket(message.id, ticketId, message.conversationId, connectionId);
 
       // Update processing log
       await this.logEmailProcessing(
@@ -161,6 +167,7 @@ export class EmailProcessingService implements IEmailProcessingService {
           priority: 'Low', // Default priority, could be enhanced with email analysis
           status: 'needs_support',
           isComplete: false,
+          fromImap: false, // This is from Exchange, not IMAP
           userId: connection.userId, // Assign to the connection owner
           email: message.from?.emailAddress?.address,
           name: message.from?.emailAddress?.name || message.from?.emailAddress?.address,
@@ -185,7 +192,7 @@ export class EmailProcessingService implements IEmailProcessingService {
       // Get the connection user for the comment
       const ticket = await this.prisma.ticket.findUnique({
         where: { id: ticketId },
-        include: { user: true }
+        include: { assignedTo: true }
       });
 
       if (!ticket) {
@@ -215,13 +222,14 @@ export class EmailProcessingService implements IEmailProcessingService {
   /**
    * Link an email to a ticket
    */
-  async linkEmailToTicket(messageId: string, ticketId: string, threadId?: string): Promise<void> {
+  async linkEmailToTicket(messageId: string, ticketId: string, threadId?: string, connectionId?: string): Promise<void> {
     try {
       await this.prisma.ticketEmailMapping.create({
         data: {
           ticketId,
           messageId,
-          threadId
+          threadId,
+          connectionId: connectionId || '' // This should be required in practice
         }
       });
     } catch (error) {
@@ -248,7 +256,12 @@ export class EmailProcessingService implements IEmailProcessingService {
   ): Promise<void> {
     try {
       await this.prisma.emailProcessingLog.upsert({
-        where: { messageId },
+        where: { 
+          connectionId_messageId: {
+            connectionId,
+            messageId
+          }
+        },
         update: {
           status,
           ticketId,
@@ -298,7 +311,7 @@ export class EmailProcessingService implements IEmailProcessingService {
       skipped: 0
     };
 
-    stats.forEach(stat => {
+    stats.forEach((stat: any) => {
       const count = stat._count.status;
       result.total += count;
       switch (stat.status) {

@@ -14,20 +14,25 @@
     "db:push": "prisma db push --accept-data-loss",
     "db:migrate": "prisma migrate dev",
     "build": "tsc",
-    "dev": "ts-node-dev --respawn src/main.ts"
+    "dev": "ts-node-dev --respawn src/main.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/email-reply-parser": "^1.4.2",
     "@types/formidable": "^3.4.5",
     "@types/imap": "^0.8.42",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^22.9.0",
     "@types/nodemailer": "^7.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/simple-oauth2": "^5.0.7",
+    "jest": "^30.0.5",
     "prisma": "5.22.0",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
