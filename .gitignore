@@ -50,6 +50,5 @@ infra
 
 exchange-integration/
 
-# VS Code local settings
-.vscode/settings.json
-.vscode/mcp.json
+# VS Code settings (entire folder)
+.vscode/
