@@ -8,6 +8,7 @@ import type {
 } from '../../types/email';
 import { ExchangeEmailProvider } from './ExchangeEmailProvider';
 import { SMTPEmailProvider } from './SMTPEmailProvider';
+import { exchangeLogger } from '../exchange/logger';
 
 export class EmailService {
   private prisma: PrismaClient;
@@ -193,7 +194,7 @@ export class EmailService {
   }): Promise<void> {
     try {
       // You could create a table for outbound email logs
-      console.log('Outbound email sent:', {
+      exchangeLogger.info('Outbound email sent:', {
         ticketId: data.ticketId,
         messageId: data.messageId,
         recipient: data.recipient,
@@ -202,7 +203,7 @@ export class EmailService {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Failed to log outbound email:', error);
+      exchangeLogger.error('Failed to log outbound email:', { error: error as Error });
     }
   }
 }

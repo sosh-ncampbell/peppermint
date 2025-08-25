@@ -1,13 +1,14 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { requirePermission } from '../../lib/requirePermission';
+import { requirePermission } from '../../lib/roles';
 import { ExchangeController } from '../../controllers/exchange/ExchangeController';
-import { checkSession } from '../../lib/checkSession';
+import { checkSession } from '../../lib/session';
+import { prisma } from '../../prisma';
 
 export default async function exchangeRoutes(
   fastify: FastifyInstance,
   options: FastifyPluginOptions
 ) {
-  const controller = new ExchangeController(fastify.prisma);
+  const controller = new ExchangeController(prisma);
 
   // Middleware to check authentication for all routes
   fastify.addHook('preHandler', checkSession);
@@ -20,7 +21,7 @@ export default async function exchangeRoutes(
   fastify.post(
     '/connections',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Create a new Microsoft 365 Exchange connection',
         tags: ['Exchange'],
@@ -79,7 +80,7 @@ export default async function exchangeRoutes(
   fastify.get(
     '/connections',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Get all Exchange connections',
         tags: ['Exchange'],
@@ -121,7 +122,7 @@ export default async function exchangeRoutes(
   fastify.get(
     '/connections/:connectionId',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Get a specific Exchange connection',
         tags: ['Exchange'],
@@ -146,7 +147,7 @@ export default async function exchangeRoutes(
   fastify.delete(
     '/connections/:connectionId',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Delete an Exchange connection',
         tags: ['Exchange'],
@@ -171,7 +172,7 @@ export default async function exchangeRoutes(
   fastify.post(
     '/connections/:connectionId/oauth/initiate',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Initiate OAuth flow for Exchange connection',
         tags: ['Exchange'],
@@ -230,7 +231,7 @@ export default async function exchangeRoutes(
   fastify.post(
     '/connections/:connectionId/process-emails',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Process emails from Exchange',
         tags: ['Exchange'],
@@ -278,7 +279,7 @@ export default async function exchangeRoutes(
   fastify.post(
     '/connections/:connectionId/test',
     {
-      preHandler: [requirePermission(['admin::manage'])],
+      preHandler: [requirePermission(['settings::manage'])],
       schema: {
         description: 'Test Exchange connection',
         tags: ['Exchange'],

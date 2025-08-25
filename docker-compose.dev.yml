@@ -22,10 +22,59 @@ services:
     depends_on:
       - peppermint_postgres
     environment:
+      # Environment
+      NODE_ENV: "development"
+      
+      # Database Configuration
       DB_USERNAME: "peppermint"
       DB_PASSWORD: "1234"
       DB_HOST: "peppermint_postgres"
+      DATABASE_URL: "postgresql://peppermint:1234@peppermint_postgres:5432/peppermint"
+      
+      # Security Configuration
       SECRET: 'peppermint4life'
+      JWT_SECRET: 'your_32_character_jwt_secret_here'
+      EXCHANGE_ENCRYPTION_KEY: 'your_32_character_encryption_key'
+      
+      # Application URLs
+      API_BASE_URL: "http://localhost:3000"
+      FRONTEND_URL: "http://localhost:3001"
+      
+      # Microsoft 365 Exchange Integration
+      MICROSOFT_CLIENT_ID: "your_microsoft_app_client_id"
+      MICROSOFT_CLIENT_SECRET: "your_microsoft_app_client_secret"
+      
+      # OAuth Configuration
+      EXCHANGE_OAUTH_REDIRECT_URI: "http://localhost:3000/admin/exchange/callback"
+      EXCHANGE_OAUTH_SCOPES: "https://graph.microsoft.com/Mail.Read,https://graph.microsoft.com/Mail.Send,https://graph.microsoft.com/User.Read"
+      
+      # Rate Limiting
+      EXCHANGE_RATE_LIMIT: "100"
+      
+      # Email Processing Configuration
+      EXCHANGE_EMAIL_BATCH_SIZE: "50"
+      EXCHANGE_EMAIL_POLL_INTERVAL: "300000"
+      
+      # Security Configuration
+      EXCHANGE_COOKIE_SECURE: "false"
+      EXCHANGE_COOKIE_HTTPONLY: "true"
+      EXCHANGE_COOKIE_SAMESITE: "lax"
+      
+      # Email Provider Configuration - SMTP (commented out, using Exchange instead)
+      # EMAIL_PROVIDER: "smtp"
+      # EMAIL_HOST: "smtp.yourdomain.com"
+      # EMAIL_PORT: "587"
+      # EMAIL_SECURE: "true"
+      # EMAIL_USER: "your_email@yourdomain.com"
+      # EMAIL_PASS: "your_email_password"
+      
+      # Email Provider Configuration - Exchange Integration
+      EMAIL_PROVIDER: "exchange"
+      
+      # Exchange Email Configuration (used when EMAIL_PROVIDER=exchange)
+      EXCHANGE_FROM_NAME: "Support Team"
+      EXCHANGE_FROM_EMAIL: "tickets@smartofficesinc.com"
+      EXCHANGE_REPLY_TO_EMAIL: "support@smartofficesinc.com"
 
 volumes:
  pgdata:

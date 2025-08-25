@@ -51,6 +51,7 @@ export function emailProviderRoutes(fastify: FastifyInstance) {
               EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'smtp',
               EXCHANGE_FROM_EMAIL: process.env.EXCHANGE_FROM_EMAIL,
               EXCHANGE_FROM_NAME: process.env.EXCHANGE_FROM_NAME,
+              EXCHANGE_REPLY_TO_EMAIL: process.env.EXCHANGE_REPLY_TO_EMAIL,
             },
             exchangeConnections
           }

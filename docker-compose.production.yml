@@ -1,0 +1,133 @@
+# Updated Production Docker Compose with Exchange Integration
+# This shows the changes needed for your existing peppermint service
+
+networks:
+  app-network:
+    name: app-network
+    external: true
+  clamav-net:
+    driver: bridge
+    external: false
+  peppermint-net:
+    driver: bridge
+    external: false
+
+services:
+  # ... (keep all your existing services: traefik, yacht, docker-registry, etc.)
+
+  peppermint_postgres:
+    container_name: peppermint_postgres
+    image: postgres:latest
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: peppermint
+      POSTGRES_PASSWORD: 'REDACTED_SECRET'
+      POSTGRES_DB: peppermint
+    networks:
+      - peppermint-net  # Isolated on peppermint network only
+ 
+  peppermint:
+    container_name: peppermint
+    image: pepperlabs/peppermint:latest
+    ports:
+      - 3000:3000
+      - 5003:5003
+    restart: always
+    depends_on:
+      - peppermint_postgres
+    environment:
+      # =============================================================================
+      # EXISTING PEPPERMINT CONFIGURATION
+      # =============================================================================
+      DB_USERNAME: "peppermint"
+      DB_PASSWORD: "REDACTED_SECRET"
+      DB_HOST: "peppermint_postgres"
+      SECRET: 'REDACTED_SECRET'
+      
+      # =============================================================================
+      # MICROSOFT AZURE APP REGISTRATION
+      # =============================================================================
+      # Get these values from your Azure App Registration
+      MICROSOFT_CLIENT_ID: "${MICROSOFT_CLIENT_ID}"
+      MICROSOFT_CLIENT_SECRET: "${MICROSOFT_CLIENT_SECRET}"
+      MICROSOFT_TENANT_ID: "${MICROSOFT_TENANT_ID}"
+
+      # =============================================================================
+      # EXCHANGE OAUTH CONFIGURATION
+      # =============================================================================
+      EXCHANGE_OAUTH_REDIRECT_URI: "https://saruman.smartservices.tech/admin/exchange/callback"
+      EXCHANGE_OAUTH_SCOPES: "https://graph.microsoft.com/Mail.Read,https://graph.microsoft.com/Mail.Send,https://graph.microsoft.com/User.Read"
+
+      # =============================================================================
+      # EMAIL PROVIDER CONFIGURATION
+      # =============================================================================
+      # Options: 'smtp' or 'exchange'
+      EMAIL_PROVIDER: "${EMAIL_PROVIDER:-smtp}"
+
+      # Exchange Email Configuration (used when EMAIL_PROVIDER=exchange)
+      EXCHANGE_FROM_NAME: "${EXCHANGE_FROM_NAME:-Smart Offices Support}"
+      EXCHANGE_FROM_EMAIL: "${EXCHANGE_FROM_EMAIL:-tickets@smartofficesinc.com}"
+
+      # Optional: Reply-To address (useful for distribution groups)
+      # Set this to show a different reply address than the sending account
+      # Example: EXCHANGE_FROM_EMAIL=tickets@company.com, EXCHANGE_REPLY_TO_EMAIL=support@company.com
+      EXCHANGE_REPLY_TO_EMAIL: "${EXCHANGE_REPLY_TO_EMAIL:-support@smartofficesinc.com}"
+
+      # =============================================================================
+      # EXCHANGE EMAIL PROCESSING
+      # =============================================================================
+      EXCHANGE_EMAIL_BATCH_SIZE: "${EXCHANGE_EMAIL_BATCH_SIZE:-50}"
+      EXCHANGE_EMAIL_POLL_INTERVAL: "${EXCHANGE_EMAIL_POLL_INTERVAL:-300000}"
+
+      # =============================================================================
+      # EXCHANGE RATE LIMITING
+      # =============================================================================
+      EXCHANGE_RATE_LIMIT: "${EXCHANGE_RATE_LIMIT:-100}"
+
+      # =============================================================================
+      # EXCHANGE SECURITY CONFIGURATION
+      # =============================================================================
+      EXCHANGE_COOKIE_SECURE: "${EXCHANGE_COOKIE_SECURE:-true}"
+      EXCHANGE_COOKIE_HTTPONLY: "${EXCHANGE_COOKIE_HTTPONLY:-true}"
+      EXCHANGE_COOKIE_SAMESITE: "${EXCHANGE_COOKIE_SAMESITE:-strict}"
+
+      # =============================================================================
+      # OPTIONAL EXCHANGE SETTINGS
+      # =============================================================================
+      # Custom domain for OAuth redirect (auto-detected from EXCHANGE_OAUTH_REDIRECT_URI)
+      # EXCHANGE_CUSTOM_DOMAIN: "saruman.smartservices.tech"
+      
+      # =============================================================================
+      # LOGGING CONFIGURATION
+      # =============================================================================
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      
+      # =============================================================================
+      # NODE.JS CONFIGURATION
+      # =============================================================================
+      NODE_ENV: "production"
+
+    networks:
+      - app-network      # For Traefik access
+      - peppermint-net   # For database communication
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.peppermint.rule=Host(`saruman.smartservices.tech`)"
+      - "traefik.http.routers.peppermint.entrypoints=websecure"
+      - "traefik.http.routers.peppermint.tls=true"
+      - "traefik.http.routers.peppermint.tls.certresolver=cloudflare"
+      - "traefik.http.services.peppermint.loadbalancer.server.port=3000"
+      - "traefik.http.routers.peppermint.middlewares=peppermint-ipallowlist"
+      - "traefik.http.middlewares.peppermint-ipallowlist.ipallowlist.sourceRange=10.1.2.0/23,10.4.1.0/24,192.168.10.0/24,192.168.8.0/24,69.63.229.242/32,69.63.229.254/32,69.2.19.120/29"
+
+volumes:
+  alertmanager-logs:
+    driver: local
+  clamav_db:
+    driver: local
+  clamav_logs:
+    driver: local
+  pgdata:
+    driver: local

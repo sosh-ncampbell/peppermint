@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../email/EmailService';
 import type { TicketEmailContext } from '../../types/email';
+import { exchangeLogger } from '../exchange/logger';
 
 export class TicketNotificationService {
   private prisma: PrismaClient;
@@ -49,9 +50,9 @@ export class TicketNotificationService {
         context
       );
 
-      console.log(`Assignment notification sent for ticket ${ticket.Number} to ${assigneeEmail}`);
+      exchangeLogger.info(`Assignment notification sent for ticket ${ticket.Number} to ${assigneeEmail}`);
     } catch (error) {
-      console.error('Error sending assignment notification:', error);
+      exchangeLogger.error('Error sending assignment notification:', { error: error as Error });
       throw error;
     }
   }
@@ -99,9 +100,9 @@ export class TicketNotificationService {
         context
       );
 
-      console.log(`Comment notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
+      exchangeLogger.info(`Comment notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
     } catch (error) {
-      console.error('Error sending comment notification:', error);
+      exchangeLogger.error('Error sending comment notification:', { error: error as Error });
       throw error;
     }
   }
@@ -148,9 +149,9 @@ export class TicketNotificationService {
         context
       );
 
-      console.log(`Status change notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
+      exchangeLogger.info(`Status change notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
     } catch (error) {
-      console.error('Error sending status change notification:', error);
+      exchangeLogger.error('Error sending status change notification:', { error: error as Error });
       throw error;
     }
   }
@@ -191,9 +192,9 @@ export class TicketNotificationService {
         context
       );
 
-      console.log(`Creation notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
+      exchangeLogger.info(`Creation notification sent for ticket ${ticket.Number} to ${recipientEmail}`);
     } catch (error) {
-      console.error('Error sending creation notification:', error);
+      exchangeLogger.error('Error sending creation notification:', { error: error as Error });
       throw error;
     }
   }

@@ -15,8 +15,13 @@
               }
             }
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
-  ]
+  ],
+  "json.validate.enable": true,
+  "files.associations": {
+    "mcp.json": "jsonc"
+  }
 }

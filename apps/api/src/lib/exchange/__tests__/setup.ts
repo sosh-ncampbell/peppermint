@@ -1,5 +1,6 @@
 // Mock environment variables FIRST - before any imports
 Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
+Object.defineProperty(process.env, 'LOG_LEVEL', { value: 'silent', writable: true });
 process.env.EXCHANGE_ENCRYPTION_KEY = 'test-encryption-key-32-characters-long';
 process.env.JWT_SECRET = 'test-jwt-secret-32-characters-long';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';

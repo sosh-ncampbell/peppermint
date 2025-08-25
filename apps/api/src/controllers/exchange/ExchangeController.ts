@@ -14,6 +14,8 @@ import type {
 import { MicrosoftGraphService } from '../../lib/exchange/MicrosoftGraphService';
 import { OAuthService } from '../../lib/exchange/OAuthService';
 import { EmailProcessingService } from '../../lib/exchange/EmailProcessingService';
+import { checkSession } from '../../lib/session';
+import { exchangeLogger } from '../../lib/exchange/logger';
 
 export class ExchangeController {
   private prisma: PrismaClient;
@@ -37,7 +39,7 @@ export class ExchangeController {
   ): Promise<CreateConnectionResponse> {
     try {
       const { tenantId, clientId } = request.body;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       // Validate required fields
       if (!tenantId || !clientId) {
@@ -100,7 +102,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error creating Exchange connection:', error);
+      exchangeLogger.error('Error creating Exchange connection:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -118,7 +120,7 @@ export class ExchangeController {
   ): Promise<OAuthInitiateResponse> {
     try {
       const { connectionId } = request.params;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       // Verify connection ownership
       const connection = await this.prisma.exchangeConnection.findFirst({
@@ -150,7 +152,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error initiating OAuth:', error);
+      exchangeLogger.error('Error initiating OAuth:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -186,7 +188,7 @@ export class ExchangeController {
       reply.redirect(`${frontendUrl}/admin/exchange?success=true`);
 
     } catch (error) {
-      console.error('OAuth callback error:', error);
+      exchangeLogger.error('OAuth callback error:', { error: error as Error });
       
       // Redirect to frontend with error
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -207,7 +209,7 @@ export class ExchangeController {
     try {
       const { connectionId } = request.params;
       const { limit = 50 } = request.body;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       // Verify connection ownership
       const connection = await this.prisma.exchangeConnection.findFirst({
@@ -239,7 +241,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error processing emails:', error);
+      exchangeLogger.error('Error processing emails:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -258,7 +260,7 @@ export class ExchangeController {
     reply: FastifyReply
   ): Promise<ExchangeConnectionListResponse> {
     try {
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       const connections = await this.prisma.exchangeConnection.findMany({
         where: {
@@ -303,7 +305,7 @@ export class ExchangeController {
           refreshToken: undefined,
           tokenType: token.tokenType,
           expiresAt: token.expiresAt,
-          scope: token.scope,
+          scope: token.scope || undefined,
           createdAt: conn.createdAt,
           updatedAt: conn.updatedAt
         }))
@@ -316,7 +318,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error fetching connections:', error);
+      exchangeLogger.error('Error fetching connections:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -335,7 +337,7 @@ export class ExchangeController {
   ): Promise<ExchangeConnectionResponse> {
     try {
       const { connectionId } = request.params;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       const connection = await this.prisma.exchangeConnection.findFirst({
         where: {
@@ -384,7 +386,7 @@ export class ExchangeController {
             refreshToken: undefined,
             tokenType: token.tokenType,
             expiresAt: token.expiresAt,
-            scope: token.scope,
+            scope: token.scope || undefined,
             createdAt: token.createdAt,
             updatedAt: token.updatedAt
           }))
@@ -392,7 +394,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error fetching connection:', error);
+      exchangeLogger.error('Error fetching connection:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -410,7 +412,7 @@ export class ExchangeController {
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const { connectionId } = request.params;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       // Verify connection ownership
       const connection = await this.prisma.exchangeConnection.findFirst({
@@ -444,7 +446,7 @@ export class ExchangeController {
       };
 
     } catch (error) {
-      console.error('Error deleting connection:', error);
+      exchangeLogger.error('Error deleting connection:', { error: error as Error });
       reply.code(500);
       return {
         success: false,
@@ -462,7 +464,7 @@ export class ExchangeController {
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const { connectionId } = request.params;
-      const userId = request.user.id;
+      const user = await checkSession(request); const userId = user!.id;
 
       // Verify connection ownership
       const connection = await this.prisma.exchangeConnection.findFirst({
@@ -498,7 +500,7 @@ export class ExchangeController {
       }
 
     } catch (error) {
-      console.error('Error testing connection:', error);
+      exchangeLogger.error('Error testing connection:', { error: error as Error });
       reply.code(500);
       return {
         success: false,

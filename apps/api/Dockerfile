@@ -37,7 +37,7 @@ RUN yarn install
 # Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
 RUN ls
-COPY turbo.json /../../turbo.json
+COPY --from=builder /app/turbo.json ./turbo.json
 
 # RUN rm -f apps/api/.env
 

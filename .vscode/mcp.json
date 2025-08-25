@@ -1,4 +1,5 @@
 {
+  // Model Context Protocol server configuration
   "mcpServers": {
     "sequential-thinking": {
       "command": "npx",

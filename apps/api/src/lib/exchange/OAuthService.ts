@@ -6,6 +6,7 @@ import type {
   IOAuthService 
 } from '../../types/exchange';
 import { generateState, generatePKCECodes } from './crypto';
+import { exchangeLogger } from './logger';
 
 export class OAuthService implements IOAuthService {
   private prisma: PrismaClient;
@@ -55,7 +56,7 @@ export class OAuthService implements IOAuthService {
         codeVerifier
       };
     } catch (error) {
-      console.error('Error generating auth URL:', error);
+      exchangeLogger.oauthError(userId, error as Error, 'AUTH_URL_GENERATION_FAILED');
       throw new Error('Failed to generate authorization URL');
     }
   }
@@ -124,7 +125,11 @@ export class OAuthService implements IOAuthService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Token exchange failed:', response.status, errorText);
+        exchangeLogger.error('Token exchange failed', {
+          error: new Error(`Token exchange failed: ${response.status} - ${errorText}`),
+          operation: 'oauth_token_exchange',
+          httpStatus: response.status
+        });
         throw new Error(`Token exchange failed: ${response.status}`);
       }
 
@@ -195,7 +200,7 @@ export class OAuthService implements IOAuthService {
       };
 
     } catch (error) {
-      console.error('OAuth callback error:', error);
+      exchangeLogger.oauthError('', error as Error, 'OAUTH_CALLBACK_ERROR');
       throw error;
     }
   }
@@ -243,7 +248,7 @@ export class OAuthService implements IOAuthService {
       });
 
       if (!response.ok) {
-        console.error('Token refresh failed:', response.status);
+        exchangeLogger.tokenRefreshError(connectionId, new Error(`Token refresh failed: ${response.status}`));
         return false;
       }
 
@@ -265,7 +270,7 @@ export class OAuthService implements IOAuthService {
       return true;
 
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      exchangeLogger.tokenRefreshError(connectionId, error as Error);
       return false;
     }
   }
@@ -306,7 +311,11 @@ export class OAuthService implements IOAuthService {
             }).toString()
           });
         } catch (error) {
-          console.warn('Failed to revoke token with Microsoft:', error);
+          exchangeLogger.warn('Failed to revoke token with Microsoft', {
+            connectionId,
+            error: error as Error,
+            operation: 'token_revocation'
+          });
           // Continue with local cleanup even if remote revocation fails
         }
       }
@@ -319,7 +328,11 @@ export class OAuthService implements IOAuthService {
       return true;
 
     } catch (error) {
-      console.error('Error revoking tokens:', error);
+      exchangeLogger.error('Error revoking tokens', {
+        connectionId,
+        error: error as Error,
+        operation: 'token_revocation_cleanup'
+      });
       return false;
     }
   }
@@ -338,7 +351,10 @@ export class OAuthService implements IOAuthService {
         }
       });
     } catch (error) {
-      console.error('Error cleaning up expired sessions:', error);
+      exchangeLogger.error('Error cleaning up expired OAuth sessions', {
+        error: error as Error,
+        operation: 'oauth_session_cleanup'
+      });
     }
   }
 }

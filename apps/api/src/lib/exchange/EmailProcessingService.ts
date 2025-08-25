@@ -6,6 +6,7 @@ import type {
 import { MicrosoftGraphService } from './MicrosoftGraphService';
 import { extractPlainText, sanitizeEmailContent } from './crypto';
 import { EmailService } from '../email/EmailService';
+import { exchangeLogger } from './logger';
 
 export class EmailProcessingService implements IEmailProcessingService {
   private prisma: PrismaClient;
@@ -39,14 +40,14 @@ export class EmailProcessingService implements IEmailProcessingService {
       // Fetch emails from Microsoft Graph
       const emails = await this.graphService.getEmails(connectionId, limit);
       
-      console.log(`Processing ${emails.length} emails for connection ${connectionId}`);
+      exchangeLogger.info(`Processing ${emails.length} emails for connection ${connectionId}`);
 
       for (const email of emails) {
         try {
           await this.processEmail(email, connectionId);
           processed++;
         } catch (error) {
-          console.error(`Error processing email ${email.id}:`, error);
+          exchangeLogger.error(`Error processing email ${email.id}:`, { error: error as Error });
           errors++;
           
           // Log the error for tracking
@@ -62,11 +63,11 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       }
 
-      console.log(`Email processing complete: ${processed} processed, ${errors} errors`);
+      exchangeLogger.info(`Email processing complete: ${processed} processed, ${errors} errors`);
       return { processed, errors };
 
     } catch (error) {
-      console.error('Error in processEmails:', error);
+      exchangeLogger.error('Error in processEmails:', { error: error as Error });
       throw error;
     }
   }
@@ -86,7 +87,7 @@ export class EmailProcessingService implements IEmailProcessingService {
     });
 
     if (existingLog) {
-      console.log(`Email ${message.id} already processed, skipping`);
+      exchangeLogger.info(`Email ${message.id} already processed, skipping`);
       return;
     }
 
@@ -136,7 +137,7 @@ export class EmailProcessingService implements IEmailProcessingService {
       );
 
     } catch (error) {
-      console.error(`Error processing email ${message.id}:`, error);
+      exchangeLogger.error(`Error processing email ${message.id}:`, { error: error as Error });
       throw error;
     }
   }
@@ -178,11 +179,11 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       });
 
-      console.log(`Created ticket ${ticket.id} from email ${message.id}`);
+      exchangeLogger.info(`Created ticket ${ticket.id} from email ${message.id}`);
       return ticket.id;
 
     } catch (error) {
-      console.error('Error creating ticket from email:', error);
+      exchangeLogger.error('Error creating ticket from email:', { error: error as Error });
       throw error;
     }
   }
@@ -214,10 +215,10 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       });
 
-      console.log(`Added comment to ticket ${ticketId} from email ${message.id}`);
+      exchangeLogger.info(`Added comment to ticket ${ticketId} from email ${message.id}`);
 
     } catch (error) {
-      console.error('Error adding comment to ticket:', error);
+      exchangeLogger.error('Error adding comment to ticket:', { error: error as Error });
       throw error;
     }
   }
@@ -237,9 +238,9 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       });
 
-      console.log(`Linked email ${messageId} to ticket ${ticketId}`);
+      exchangeLogger.info(`Linked email ${messageId} to ticket ${ticketId}`);
     } catch (error) {
-      console.error('Error linking email to ticket:', error);
+      exchangeLogger.error('Error linking email to ticket:', { error: error as Error });
       throw error;
     }
   }
@@ -282,7 +283,7 @@ export class EmailProcessingService implements IEmailProcessingService {
         }
       });
     } catch (error) {
-      console.error('Error logging email processing:', error);
+      exchangeLogger.error('Error logging email processing:', { error: error as Error });
       // Don't throw here as this is just logging
     }
   }
@@ -414,12 +415,12 @@ export class EmailProcessingService implements IEmailProcessingService {
 
       if (success) {
         // Log the outbound email for tracking
-        console.log(`Sent ticket response for ticket ${ticket.Number} to ${recipientEmail}`);
+        exchangeLogger.info(`Sent ticket response for ticket ${ticket.Number} to ${recipientEmail}`);
       }
 
       return success;
     } catch (error) {
-      console.error('Error sending ticket response:', error);
+      exchangeLogger.error('Error sending ticket response:', { error: error as Error });
       return false;
     }
   }
@@ -435,9 +436,9 @@ export class EmailProcessingService implements IEmailProcessingService {
         connectionId
       });
       
-      console.log(`Exchange email provider initialized for connection ${connectionId}`);
+      exchangeLogger.info(`Exchange email provider initialized for connection ${connectionId}`);
     } catch (error) {
-      console.error('Failed to initialize Exchange email provider:', error);
+      exchangeLogger.error('Failed to initialize Exchange email provider:', { error: error as Error });
       throw error;
     }
   }
@@ -463,7 +464,7 @@ export class EmailProcessingService implements IEmailProcessingService {
       // Fetch emails from Microsoft Graph with enhanced metadata
       const emails = await this.graphService.getEmails(connectionId, limit);
       
-      console.log(`Processing ${emails.length} emails with threading for connection ${connectionId}`);
+      exchangeLogger.info(`Processing ${emails.length} emails with threading for connection ${connectionId}`);
 
       // Group emails by conversation ID for better threading
       const conversationGroups = this.groupEmailsByConversation(emails);
@@ -473,14 +474,14 @@ export class EmailProcessingService implements IEmailProcessingService {
           await this.processEmailConversation(conversationEmails, connectionId, conversationId);
           processed += conversationEmails.length;
         } catch (error) {
-          console.error(`Error processing conversation ${conversationId}:`, error);
+          exchangeLogger.error(`Error processing conversation ${conversationId}:`, { error: error as Error });
           errors += conversationEmails.length;
         }
       }
 
       return { processed, errors };
     } catch (error) {
-      console.error('Error in processEmailsWithThreading:', error);
+      exchangeLogger.error('Error in processEmailsWithThreading:', { error: error as Error });
       return { processed, errors: errors + 1 };
     }
   }
@@ -522,7 +523,7 @@ export class EmailProcessingService implements IEmailProcessingService {
 
     if (existingMapping) {
       ticketId = existingMapping.ticketId;
-      console.log(`Found existing ticket ${ticketId} for conversation ${conversationId}`);
+      exchangeLogger.info(`Found existing ticket ${ticketId} for conversation ${conversationId}`);
     }
 
     for (const email of emails) {
@@ -538,18 +539,18 @@ export class EmailProcessingService implements IEmailProcessingService {
         });
 
         if (existingLog) {
-          console.log(`Email ${email.id} already processed, skipping`);
+          exchangeLogger.info(`Email ${email.id} already processed, skipping`);
           continue;
         }
 
         if (!ticketId) {
           // Create new ticket for the first email in conversation
           ticketId = await this.createTicketFromEmail(email, connectionId);
-          console.log(`Created new ticket ${ticketId} for conversation ${conversationId}`);
+          exchangeLogger.info(`Created new ticket ${ticketId} for conversation ${conversationId}`);
         } else {
           // Add subsequent emails as comments to existing ticket
           await this.addCommentToTicket(ticketId, email);
-          console.log(`Added comment to ticket ${ticketId} for email ${email.id}`);
+          exchangeLogger.info(`Added comment to ticket ${ticketId} for email ${email.id}`);
         }
 
         // Link email to ticket with threading information
@@ -566,7 +567,7 @@ export class EmailProcessingService implements IEmailProcessingService {
         );
 
       } catch (error) {
-        console.error(`Error processing email ${email.id} in conversation ${conversationId}:`, error);
+        exchangeLogger.error(`Error processing email ${email.id} in conversation ${conversationId}:`, { error: error as Error });
         
         // Log failed processing
         await this.logEmailProcessing(

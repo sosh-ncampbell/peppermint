@@ -6,6 +6,7 @@ import type {
   IMicrosoftGraphService 
 } from '../../types/exchange';
 import { maskToken } from './crypto';
+import { exchangeLogger, TokenRefreshError, ConnectionError } from './logger';
 
 export class MicrosoftGraphService implements IMicrosoftGraphService {
   private prisma: PrismaClient;
@@ -80,7 +81,10 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
       });
 
       if (!connection || !connection.tokens.length || !connection.tokens[0].refreshToken) {
-        console.error('No refresh token available for connection:', connectionId);
+        exchangeLogger.warn('No refresh token available for connection', { 
+          connectionId,
+          operation: 'refresh_token_missing'
+        });
         return false;
       }
 
@@ -109,7 +113,7 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Token refresh failed:', response.status, errorText);
+        exchangeLogger.tokenRefreshError(connectionId, new Error(`Token refresh failed: ${response.status} ${errorText}`));
         return false;
       }
 
@@ -130,11 +134,11 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
         }
       });
 
-      console.log(`Token refreshed successfully for connection: ${connectionId}`);
+      exchangeLogger.tokenRefresh(connectionId);
       return true;
 
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      exchangeLogger.tokenRefreshError(connectionId, error as Error);
       return false;
     }
   }
@@ -164,7 +168,11 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
       return data.value || [];
 
     } catch (error) {
-      console.error('Error fetching emails:', error);
+      exchangeLogger.error('Error fetching emails', { 
+        connectionId, 
+        error: error as Error,
+        operation: 'get_emails'
+      });
       throw error;
     }
   }
@@ -185,7 +193,7 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
 
       return response.ok;
     } catch (error) {
-      console.error('Connection test failed:', error);
+      exchangeLogger.connectionTest(connectionId, false);
       return false;
     }
   }
@@ -210,13 +218,17 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      exchangeLogger.error('Error getting user profile', {
+        connectionId,
+        error: error as Error,
+        operation: 'get_user_profile'
+      });
       throw error;
     }
   }
 
   /**
-   * Send an email via Microsoft Graph
+   * Send an email using Microsoft Graph API
    */
   async sendEmail(
     connectionId: string, 
@@ -228,6 +240,9 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
   ): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken(connectionId);
+      
+      // Get optional Reply-To email address from environment
+      const replyToEmail = process.env.EXCHANGE_REPLY_TO_EMAIL;
       
       const message: any = {
         message: {
@@ -243,6 +258,16 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
           }]
         }
       };
+
+      // Add Reply-To header if configured
+      if (replyToEmail) {
+        message.message.replyTo = [{
+          emailAddress: {
+            address: replyToEmail,
+            name: process.env.EXCHANGE_FROM_NAME || 'Support Team'
+          }
+        }];
+      }
 
       // Prepare internet message headers
       const headers: Array<{ name: string; value: string }> = [];
@@ -284,7 +309,11 @@ export class MicrosoftGraphService implements IMicrosoftGraphService {
 
       return response.ok;
     } catch (error) {
-      console.error('Error sending email:', error);
+      exchangeLogger.error('Error sending email', {
+        connectionId,
+        error: error as Error,
+        operation: 'send_email'
+      });
       return false;
     }
   }
